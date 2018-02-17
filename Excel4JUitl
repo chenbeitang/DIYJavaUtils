@@ -1,0 +1,274 @@
+package poi;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+
+/**
+ * 将java集合对象保存输出到Excel文件工具类
+ * 
+ * @author czqiang6
+ * 
+ */
+@SuppressWarnings("unchecked")
+public class Excel4JUitl {
+
+	/**
+	 * 
+	 * @param list
+	 *            集合对象
+	 * @param fileName
+	 *            输出的文件名称
+	 * @param aliasHeadFile
+	 *            对应输出属性的别名properties配置文件，如学生对象的“name”属性可对应为“姓名输出”
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws IOException
+	 */
+	@SuppressWarnings("rawtypes")
+	public static void writeExcel(List<?> list, String fileName,
+			String aliasHeadFile) throws NoSuchMethodException,
+			SecurityException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, IOException {
+		Properties properties = new Properties();
+		properties.load(Excel4JUitl.class.getClassLoader().getResourceAsStream(
+				aliasHeadFile));
+		fileName = fileName + ".xlsx";
+		Workbook workbook = new HSSFWorkbook();
+		Sheet sheet = workbook.createSheet();
+		for (int i = 0; i < list.size(); i++) {
+			Class clazz = list.get(i).getClass();
+			Field[] fields = clazz.getDeclaredFields();
+			// 第一行写入属性头信息
+			if (i == 0) {
+				Row row = sheet.createRow(i);
+				for (int j = 0; j < fields.length; j++) {
+					Field field = fields[j];
+					row.createCell(j).setCellValue(
+							properties.getProperty(field.getName()));
+				}
+			}
+			// 创建excel数据行
+			Row row = sheet.createRow(i + 1);
+			for (int j = 0; j < fields.length; j++) {
+				Field field = fields[j];
+				// 获取类对象属性名称
+				String property = field.getName();
+				// 拼接该属性的getter方法名
+				String getter = "get"
+						+ String.valueOf(property.charAt(0)).toUpperCase()
+						+ property.substring(1, property.length());
+				// 生成该getter方法
+				Method method = clazz.getMethod(getter);
+				// 该实例对象调用属性的getter方法
+				Object invoke = method.invoke(list.get(i));
+				row.createCell(j).setCellValue(invoke.toString());
+			}
+
+		}
+		FileOutputStream fos = new FileOutputStream(fileName);
+		workbook.write(fos);
+		workbook.close();
+		fos.close();
+
+	}
+
+	/**
+	 * 
+	 * @param list
+	 *            将要导出到Excel文件中的对象集合
+	 * @param fileName
+	 *            输出的文件名称
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InstantiationException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws IOException
+	 */
+	@SuppressWarnings("rawtypes")
+	public static void writeExcel(List<?> list, String fileName)
+			throws NoSuchMethodException, SecurityException,
+			IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, InstantiationException, IOException {
+//		fileName = fileName + ".xlsx";
+		Workbook workbook = new HSSFWorkbook();
+		Sheet sheet = workbook.createSheet();
+		for (int i = 0; i < list.size(); i++) {
+			Class clazz = list.get(i).getClass();
+			Field[] fields = clazz.getDeclaredFields();
+			// 第一行写入属性头信息
+			if (i == 0) {
+				Row row = sheet.createRow(i);
+				for (int j = 0; j < fields.length; j++) {
+					Field field = fields[j];
+					row.createCell(j).setCellValue(field.getName());
+				}
+			}
+			// 创建excel数据行
+			Row row = sheet.createRow(i + 1);
+			for (int j = 0; j < fields.length; j++) {
+				Field field = fields[j];
+				// 获取类对象属性名称
+				String property = field.getName();
+				// 获取该属性的getter方法名
+				String gettter = "get"
+						+ String.valueOf(property.charAt(0)).toUpperCase()
+						+ property.substring(1, property.length());
+				// 生成该getter方法
+				Method method = clazz.getMethod(gettter);
+				// 该实例对象调用属性的getter方法
+				Object invoke = method.invoke(list.get(i));
+				if (invoke!=null) {
+					row.createCell(j).setCellValue(invoke.toString());
+				}
+			}
+
+		}
+		FileOutputStream fos = new FileOutputStream(fileName);
+		workbook.write(fos);
+		workbook.close();
+		fos.close();
+	}
+
+	/**
+	 * 将excel文件转入集合中，excel中的每一行代表一个java bean对象
+	 * 
+	 * @param fileName
+	 *            excel文件路径
+	 * @param entity
+	 *            对应excel行数据的实体类
+	 * @return
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 * @throws ClassNotFoundException
+	 */
+	public static List<?> readExcelData(String fileName, Class<?> entity)
+			throws NoSuchMethodException, SecurityException,
+			IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, InstantiationException,
+			ClassNotFoundException {
+		List<Object> list = new ArrayList<>();
+		Object object = null;
+		Method[] methods = entity.getDeclaredMethods();
+		// 将方法名和方法对应放入到Map中
+		Map<Method, Integer> methodMap = new HashMap<>();
+		Map<Integer, Method> methodMap2 = new HashMap<>();
+		for (int i = 0; i < methods.length; i++) {
+			methodMap.put(methods[i], null);
+		}
+		try {
+			FileInputStream fis = new FileInputStream(fileName);
+
+			Workbook workbook = new HSSFWorkbook(fis);
+			int numberOfSheets = workbook.getNumberOfSheets();
+			for (int i = 0; i < numberOfSheets; i++) {
+				Sheet sheet = workbook.getSheetAt(i);
+				Iterator<Row> rowIterator = sheet.iterator();
+				// 控制第一行的数据为表头，也就是对用到java bean的属性名
+				boolean firstRow = true;
+				// 控制方法调用顺序,setter方法数组的下标
+				while (rowIterator.hasNext()) {
+					// 初始化將調用的setter方法
+					// 读取第一行的属性信息，匹配excel属性和java bean属性数据关系
+					if (firstRow) {
+						Row row = rowIterator.next();
+						Iterator<Cell> cellIterator = row.cellIterator();
+						while (cellIterator.hasNext()) {
+							Cell cell = cellIterator.next();
+							String property = "";
+							switch (cell.getCellType()) {
+							case Cell.CELL_TYPE_STRING:
+								property = cell.getStringCellValue();
+							}
+							// 拼接该属性的setter方法名
+							String setter = "set"
+									+ String.valueOf(property.charAt(0))
+											.toUpperCase()
+									+ property.substring(1, property.length());
+							Set<Entry<Method, Integer>> entrySet = methodMap
+									.entrySet();
+							for (Entry<Method, Integer> entry : entrySet) {
+								if (setter.equalsIgnoreCase(entry.getKey()
+										.getName())) {
+									methodMap.put(entry.getKey(),
+											cell.getColumnIndex());
+									methodMap2.put(cell.getColumnIndex(),
+											entry.getKey());
+								}
+							}
+						}
+						firstRow = false;
+						continue;
+					}
+					Row row = rowIterator.next();
+					Iterator<Cell> cellIterator = row.cellIterator();
+					object = entity.newInstance();
+					//将数据存入实体类对象集合中
+					while (cellIterator.hasNext()) {
+						Cell cell = cellIterator.next();
+						Method method;
+						String value = "";
+						switch (cell.getCellType()) {
+						case Cell.CELL_TYPE_STRING:
+
+							value = cell.getRichStringCellValue().getString()
+									.trim();
+							method = methodMap2.get(cell.getColumnIndex());
+							method.invoke(object, value);
+							break;
+						case Cell.CELL_TYPE_NUMERIC:
+							value = cell.getNumericCellValue() + "";
+							method = methodMap2.get(cell.getColumnIndex());
+							if (value.endsWith(".0")) {
+								value = value.substring(0,
+										value.lastIndexOf("."));
+							}
+							method.invoke(object, value);
+							break;
+						case Cell.CELL_TYPE_BOOLEAN:
+							value = String.valueOf(cell.getBooleanCellValue());
+							method = methodMap2.get(cell.getColumnIndex());
+							method.invoke(object, value);
+							break;
+						}
+					}
+					list.add(object);
+				}
+
+			}
+			fis.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return list;
+	}
+}
