@@ -1,0 +1,43 @@
+/**
+ * 将文件转换为字符串存储
+ * 
+ * @param file
+ * @return
+ */
+public void File2String(String src, String des) {
+	// 文件的byte对象
+	byte[] bytes = null;
+	try {
+		FileInputStream fis = new FileInputStream(src);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
+		byte[] b = new byte[1000];
+		int n;
+		while ((n = fis.read(b)) != -1) {
+			bos.write(b, 0, n);
+		}
+		fis.close();
+		bos.close();
+		bytes = bos.toByteArray();
+	} catch (FileNotFoundException e) {
+		e.printStackTrace();
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+	StringBuffer sb = new StringBuffer();
+	int n = 0;
+	for (Byte b : bytes) {
+		n++;
+		int value = b.intValue();
+		char c = (char) value;
+		String valueOf = String.valueOf(c);
+		sb.append(valueOf);
+	}
+	try {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(des));
+		writer.write(sb.toString());
+		writer.flush();
+		writer.close();
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+}
