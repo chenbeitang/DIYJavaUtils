@@ -1,0 +1,167 @@
+package txtDeal;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+public class TextHelper {
+	/**
+	 * 从文件中读取所有文本信息，将指定文本替换,同时在指定位置生成文本文件，descFile传入null则不生成文件
+	 * @param sourceFile 源文件路径
+	 * @param descFile 生成目标文件路径
+	 * @param replacement 替换键值对
+	 * @return
+	 */
+	static public String replaceString(String sourceFile, String descFile,
+			Map<String, String> replacement) {
+		BufferedReader reader;
+		StringBuffer sb = new StringBuffer();
+		try {
+			reader = new BufferedReader(new FileReader(sourceFile));
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				Set<Entry<String, String>> entrySet = replacement.entrySet();
+				for (Entry<String, String> entry : entrySet) {
+					if (line.contains(entry.getKey())) {
+						line = line.replace(entry.getKey(), entry.getValue());
+					}
+				}
+				sb.append(line + "\n");
+			}
+			if (descFile != null) {
+				BufferedWriter writer = new BufferedWriter(new FileWriter(
+						descFile));
+				writer.write(sb.toString());
+				writer.flush();
+				writer.close();
+			}
+			reader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * 将文本文件中的每行指定位置间的字符串删除
+	 * 
+	 * @param sourceStr
+	 *            源字符串
+	 * @param start
+	 *            删除起始位置，下标从0开始
+	 * @param end
+	 *            删除结束位置 下标从0开始
+	 * @return 返回删除指定段后的文本
+	 */
+	static public String deleteStrInLine(String srcFile, String descFile,
+			int start, int end) {
+		StringBuffer sb = null;
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(srcFile));
+			sb = new StringBuffer();
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				line = (line.substring(0, start) + line.substring(end,
+						line.length()));
+				sb.append(line + "\n");
+			}
+			if (descFile != null) {
+				BufferedWriter writer = new BufferedWriter(new FileWriter(
+						descFile));
+				writer.write(sb.toString());
+				writer.flush();
+				writer.close();
+			}
+			reader.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * 往指定文本文件中追加指定的文本信息
+	 * 
+	 * @param srcFile
+	 *            源文本文件
+	 * @param appString
+	 *            追加内容文本
+	 */
+	public static void appendStr2File(String srcFile, String appString) {
+		File file = new File(srcFile);
+		StringBuilder sb = new StringBuilder();
+		// 判断文本文件是否存在,存在继续操作
+		if (file.exists()) {
+			// 读取源本文文件的所有文本信息
+			BufferedReader reader;
+			try {
+				reader = new BufferedReader(new FileReader(file));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line + "\n");
+				}
+				// 关闭读入流
+				reader.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		// 已经读取到了源文本文件中的文本信息了，追加新的文本信息
+		sb.append(appString);
+		// 写出并覆盖源文件
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+			writer.write(sb.toString());
+			// 关闭写出流
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 创建新文件写入内容或覆盖内容到已存在的文件
+	 * 
+	 * @param filePath
+	 *            文件路径
+	 * @param content
+	 *            覆盖内容
+	 */
+	public static void mergeStr2File(String filePath, String content) {
+		File file = new File(filePath);
+		// 判断文件是否存在，不存在创建新文件
+		if (!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		// 开始覆盖文件
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+			writer.write(content);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
