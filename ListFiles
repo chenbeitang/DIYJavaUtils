@@ -1,0 +1,117 @@
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+
+public class ListFiles {
+	private int count = 0;
+	private boolean isFound;
+
+	public ListFiles() {
+	}
+
+	/**
+	 * 打印指定目录下的所有文件和子目录
+	 * 
+	 * @param path
+	 *            遍历路径
+	 * @return 
+	 */
+	public void ListAllFiles(String path) {
+		try {
+			File f = new File(path);
+			if (!f.exists()) {
+				System.err.println("搜索路径不存在！");
+				System.exit(0);
+			}
+			this.list(path);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("------总共有" + count + "条搜索结果------");
+	}
+
+	/**
+	 * path路径范围内搜索打印出包含keyword的file对象路径
+	 * 
+	 * @param path
+	 *            搜索有效范围路径
+	 * @param keyword
+	 *            模糊搜索关键字
+	 * @return 
+	 */
+	public void blurSearch(String path, String keyword) {
+		try {
+			File f = new File(path);
+			if (!f.exists()) {
+				System.err.println("搜索路径不存在！");
+				System.exit(0);
+			}
+			this.search(path, keyword);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (!isFound) {
+			System.out.println("没有搜索到任何相关文件！");
+		} else {
+			System.out.println("\n------总共检索到" + count + "条包含关键字\"" + keyword + "\"的结果------");
+		}
+	}
+
+	/**
+	 * 遍历输出指定目录下所有文件对象路径
+	 * 
+	 * @param path
+	 *            遍历路径
+	 * @throws Exception
+	 */
+	private void list(String path) throws Exception {
+		Files.walkFileTree(Paths.get(path), new SimpleFileVisitor<Path>() {
+			// 访问文件时触发该方法
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				System.out.println(file);
+				count++;
+				return FileVisitResult.CONTINUE;
+			}
+
+			// 开始访问目录时触发该方法
+			@Override
+			public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+				System.out.println(dir);
+				count++;
+				return FileVisitResult.CONTINUE;
+			}
+		});
+	}
+
+	/**
+	 * 关键字模糊搜索
+	 * 
+	 * @param path
+	 *            搜索有效范围路径
+	 * @param keyWord
+	 *            模糊搜索关键字
+	 * @throws Exception
+	 */
+	private void search(String path, String keyword) throws Exception {
+		Files.walkFileTree(Paths.get(path), new SimpleFileVisitor<Path>() {
+			// 访问文件时触发该方法
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				if (file.getFileName().toString().contains(keyword)) {
+					count++;
+					System.out.println("文件位置： " + file);
+					isFound = true;
+					return FileVisitResult.CONTINUE;
+				}
+				return FileVisitResult.CONTINUE;
+			}
+		});
+
+	}
+}
