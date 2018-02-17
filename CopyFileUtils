@@ -1,0 +1,51 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class CopyFileUtils {
+	
+	/**
+	 * 复制文件或者这个文件目录下的所有文件对象到 指定路径
+	 * @param src  源文件或文件目录
+	 * @param des	目标文件路径
+	 */
+	public static void copyFiles(File srcFile,File desFile) throws IOException{
+		if (!srcFile.exists()) {
+			System.out.println("源路径或源文件不存在！");
+			System.exit(0);
+		}
+		if (!desFile.exists()) {
+			desFile.mkdirs();
+		}
+		if (srcFile.isFile()) {
+			try {
+				desFile = new File(desFile.getAbsolutePath()+"/"+srcFile.getName());
+				copy(srcFile, desFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		else if (srcFile.isDirectory()) {
+			File file = new File(desFile.getAbsolutePath()+"/"+srcFile.getName());
+			file.mkdir();
+			for(File f : srcFile.listFiles()){
+				copyFiles(f, file);
+			}
+		}
+	}
+	private static void copy(File srcFile , File desFile) throws IOException{
+			BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFile));
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(desFile));
+		byte[] buffer = new byte[1024];
+		int hasRead = 0;
+		while ((hasRead = in.read(buffer))!=-1) {
+			out.write(buffer,0,hasRead);
+		}
+		out.close();
+		in.close();
+	}
+
+}
