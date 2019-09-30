@@ -167,8 +167,6 @@ public class ObjectManipulationUtil {
      */
     private Object getValue(Object object, long offset, Type type) {
         switch (type) {
-            case Object:
-                return unsafe.getObject(object, offset);
             case Char:
                 return unsafe.getChar(object, offset);
             case Byte:
@@ -184,7 +182,7 @@ public class ObjectManipulationUtil {
             case Boolean:
                 return unsafe.getBoolean(object, offset);
             default:
-                return null;
+                return unsafe.getObject(object, offset);
         }
 
     }
@@ -199,9 +197,6 @@ public class ObjectManipulationUtil {
      */
     private void setValue(Object object, long offset, Object val, Type type) {
         switch (type) {
-            case Object:
-                unsafe.putObjectVolatile(object, offset, val);
-                break;
             case Char:
                 unsafe.putCharVolatile(object, offset, (Character) val);
                 break;
@@ -223,6 +218,8 @@ public class ObjectManipulationUtil {
             case Boolean:
                 unsafe.putBooleanVolatile(object, offset, (Boolean) val);
                 break;
+            default:
+                unsafe.putObjectVolatile(object, offset, val);
         }
     }
 }
