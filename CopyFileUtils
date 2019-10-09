@@ -15,7 +15,7 @@ public class CopyFileUtils {
 	public static void copyFiles(File srcFile,File desFile) throws IOException{
 		if (!srcFile.exists()) {
 			System.out.println("源路径或源文件不存在！");
-			System.exit(0);
+			return;
 		}
 		if (!desFile.exists()) {
 			desFile.mkdirs();
