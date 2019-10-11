@@ -1,73 +1,96 @@
-import java.io.IOException;
+package package1;
+
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-
 /**
  * Windows系统工具类
- * 
- * @author Zaki Chen
  *
+ * @author Zaki Chen
  */
 public class WindowsSystemTool {
-	/**
-	 * 获取Windows系统指定服务的状态信息
-	 * 
-	 * @param serviceName
-	 *            服务名称
-	 * @return Boolean exist-->服务是否存在 <br>
-	 *         String code-->状态码 <br>
-	 *         String info-->状态说明 <br>
-	 *         已知运行状态码 : <br>
-	 *         1 - 已停止 3 - 正在停止 4 - 运行中
-	 * 
-	 */
-	public static Map<String, Object> queryServiceState(String serviceName) {
-		Map<String, Object> stateMap = new HashMap<>();
-		stateMap.put("exist", false);
-		Runtime runtime = Runtime.getRuntime();
-		try {
-			Process process = runtime.exec("sc query " + serviceName);
-			String result = IOUtils.toString(process.getInputStream());
-			String[] split = result.split("\n");
-			if (split.length < 5) {
-				return stateMap;
-			}
-			stateMap.put("exist", true);
-			String state = split[3].split(":")[1].trim();
-			stateMap.put("code", state.substring(0, 1));
-			stateMap.put("info", state.substring(3, state.length()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return stateMap;
-	}
+    /**
+     * 获取Windows系统指定服务的状态信息
+     *
+     * @param serviceName 服务名称
+     * @return Boolean exist-->服务是否存在 <br>
+     * String code-->状态码 <br>
+     * String info-->状态说明 <br>
+     * 已知运行状态码 : <br>
+     * 1 - 已停止 3 - 正在停止 4 - 运行中
+     */
+    public static Map<String, Object> queryServiceState(String serviceName) {
+        Map<String, Object> stateMap = new HashMap<>();
+        stateMap.put("exist", false);
+        Runtime runtime = Runtime.getRuntime();
+        try {
+            Process process = runtime.exec("sc query " + serviceName);
+            String result = convertInputStream2Str(process.getInputStream(), Charset.defaultCharset());
+            InputStream inputStream = process.getInputStream();
+            String[] split = result.split("\n");
+            if (split.length < 5) {
+                return stateMap;
+            }
+            stateMap.put("exist", true);
+            String state = split[3].split(":")[1].trim();
+            stateMap.put("code", state.substring(0, 1));
+            stateMap.put("info", state.substring(3, state.length()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return stateMap;
+    }
 
-	/**
-	 * 重启服务
-	 * @param ServiceName 服务名
-	 * @return -1 重启操作异常  1重启正常
-	 */
-	public static int restartService(String ServiceName) {
-		try {
-			Runtime.getRuntime().exec("net stop " + ServiceName);
-			Thread.sleep(3000);
-			Runtime.getRuntime().exec("net start " + ServiceName);
-		} catch (IOException e1) {
-			return -1;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		return 1;
-	}
+    /**
+     * 重启服务
+     *
+     * @param ServiceName 服务名
+     * @return -1 重启操作异常  1重启正常
+     */
+    public static int restartService(String ServiceName) {
+        try {
+            Runtime.getRuntime().exec("net stop " + ServiceName);
+            Thread.sleep(3000);
+            Runtime.getRuntime().exec("net start " + ServiceName);
+        } catch (IOException e1) {
+            return -1;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return 1;
+    }
 
-//	public static void main(String[] args) {
-////		restartServices("MySQL");
-//		Map<String, Object> state = queryServiceState("MySQL");
-//		Set<Entry<String, Object>> entries = state.entrySet();
-//		for (Entry<String, Object> entry : entries) {
-//			System.out.println(entry.getKey() + ":" + entry.getValue());
-//		}
-//	}
+    /**
+     * 读取输入流中的文本信息
+     *
+     * @param input   文本输入流
+     * @param charset 文本编码
+     * @return
+     */
+    private static String convertInputStream2Str(InputStream input, Charset charset) {
+        final char[] buffer = new char[4096];
+        final StringBuilder out = new StringBuilder();
+        try {
+            final Reader in = new InputStreamReader(input, charset);
+            try {
+                for (; ; ) {
+                    int rsz = in.read(buffer, 0, buffer.length);
+                    if (rsz < 0) {
+                        break;
+                    }
+                    out.append(buffer, 0, rsz);
+                }
+            } finally {
+                in.close();
+            }
+        } catch (UnsupportedEncodingException ex) {
+            /* ... */
+        } catch (IOException ex) {
+            /* ... */
+        }
+        return out.toString();
+    }
+
 }
